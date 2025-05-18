@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-const ClientSchema = new Schema({
+const mongoose = require('mongoose')
+const {Schema} = require('mongoose')
+
+const AdminSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -20,13 +21,13 @@ const ClientSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['client'],
-    default: 'client',
+    enum: ['admin'],
+    default: 'admin',
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-});
+})
 
-module.exports = mongoose.model('Client', ClientSchema);
+module.exports = mongoose.model('Admin', AdminSchema)

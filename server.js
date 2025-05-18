@@ -12,7 +12,7 @@ app.use(express.json());
 
 // Import routes
 
-const auth = require ('./routes/auth');
+app.use('/api/auth', require('./routes/auth'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');

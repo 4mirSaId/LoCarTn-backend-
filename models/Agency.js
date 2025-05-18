@@ -23,6 +23,11 @@ const AgencySchema = new Schema({
     type: String,
     required: true,
   },
+  role: {
+    type: String,
+    enum: ['agency'],
+    default: 'agency',
+  },
   createdAt: {
     type: Date,
     default: Date.now,

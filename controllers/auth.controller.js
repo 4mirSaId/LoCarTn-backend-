@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Agency = require("../models/Agency");
 const Client = require("../models/Client");
+const Admin = require("../models/Admin");
 
 exports.register = async (req, res) => {
     const {role} = req.body;
@@ -12,6 +13,8 @@ exports.register = async (req, res) => {
             Model = Client;
         } else if (role === "agency") {
             Model = Agency;
+        } else if (role === "admin") {
+            Model = Admin;
         } else {
             return res.status(400).json({message: "Invalid role"});
         }
@@ -46,20 +49,19 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-    const {role} = req.body;
     const {email, password} = req.body;
 
     try {
-        let Model;
-        if (role === "client") {
-            Model = Client;
-        } else if (role === "agency") {
-            Model = Agency;
-        } else {
-            return res.status(400).json({message: "Invalid role"});
+        let user = await Client.findOne({ email });
+        let role = 'client';
+        if (!user) {
+            user = await Agency.findOne({ email });
+            role = 'agency';
         }
-
-        const user = await Model.findOne({ email });
+        if (!user) {
+            user = await Admin.findOne({ email });
+            role = 'admin';
+        }
         if (!user) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
@@ -69,11 +71,12 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
         res.status(200).json({
             token,
-            role: user.role,
+            role,
+            user,
             message: "User logged in successfully"
         });
     } catch (error) {
