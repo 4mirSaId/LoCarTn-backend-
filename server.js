@@ -2,6 +2,7 @@ const express = require ('express');
 const cors = require ('cors');
 const dotenv = require ('dotenv');
 const connectDB = require ('./config/connectDB');
+const upload = require ('./routes/upload');
 dotenv.config();
 
 connectDB();
@@ -17,6 +18,7 @@ app.use(express.json());
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/cars', require('./routes/cars'));
+app.use('/api/upload', upload);
 
 app.get('/', (req, res) => {
   res.send('API is running...');
