@@ -21,3 +21,26 @@ const authMiddleware = (role = []) => {
         });
     }
 }
+
+const isAgency = async (req, res, next) => {
+    if (req.user.role !== 'agency') {
+        return res.status(403).json({message: 'Access denied: Not an agency'});
+    }
+    next();
+};
+
+const isClient = async (req, res, next) => {
+    if (req.user.role !== 'client') {
+        return res.status(403).json({message: 'Access denied: Not an client'});
+    }
+    next();
+};
+
+const isAdmin = async (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({message: 'Access denied: Not ADMIN'});
+    }
+    next();
+};
+
+module.exports = {authMiddleware, isAgency, isClient, isAdmin};
