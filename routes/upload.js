@@ -1,18 +1,9 @@
-import express from 'express';
-import multer from 'multer';
-import { uploadFile } from '../controllers/upload.js';
-
+const express = require('express');
 const router = express.Router();
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = require('../middleware/upload');
+const { addCar } = require('../controllers/carController');
 
-router.post('/upload', upload.single('image'), async (req, res) => {
-    try {
-        const result = await uploadFile(req.file.buffer);
-        res.status(200).json({ url: result.secure_url });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to upload image' });
-    }
-});
+router.post('/upload', upload.single('image'), addCar);
 
-export default router;
+
+module.exports = router;

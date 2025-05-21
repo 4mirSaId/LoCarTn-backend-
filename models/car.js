@@ -23,7 +23,16 @@ const carSchema = new Schema({
   imageUrl: {
     type: String,
     required: true
-  }
+  },
+  agency: {
+    type: Schema.Types.ObjectId,
+    ref: 'Agency',
+    required: true
+  },
+  isRented: {
+    type: Boolean,
+    default: false
+  },
 }, {timestamps: true})
 
 module.exports = mongoose.model('Car', carSchema)
