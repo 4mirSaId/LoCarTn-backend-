@@ -35,7 +35,7 @@ exports.register = async (req, res) => {
 
         await user.save();
 
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        const token = jwt.sign({ id: user._id, role: user.role, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
         res.status(201).json({
             token,
@@ -65,19 +65,33 @@ exports.login = async (req, res) => {
         if (!user) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
-
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
+        // Add phone to JWT payload for clients
+        const tokenPayload = { id: user._id, role: user.role };
+        if (role === 'client') tokenPayload.phone = user.phone;
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-        const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        // After finding the user and before sending the response:
+        const userObj = user.toObject();
+        userObj.id = user._id; // always set id
+        if (role === 'agency') {
+            userObj.agencyId = user._id; // for agencies, set agencyId
+        }
 
-        res.status(200).json({
+        res.json({
             token,
-            role,
-            user,
-            message: "User logged in successfully"
+            role: user.role,
+            agencyId: user.agencyId || user._id,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+            }
         });
     } catch (error) {
         console.error(error);

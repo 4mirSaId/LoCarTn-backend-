@@ -1,83 +1,94 @@
 const express = require('express');
 const Car = require('../models/car');
+const { authMiddleware, isAgency } = require('../middleware/authMiddleware');
+const upload = require('../middleware/upload');
 const router = express.Router();
-const {authMiddleware, isAgency} = require('../middleware/authMiddleware');
-const Agency = require('../models/Agency');
 
-// add a new car
-// only agency can add a car
-router.post('/', authMiddleware, isAgency, async (req, res) => {
-  try {
-    const {model, brand, year, pricePerDay, imageUrl} = req.body;
-    const car = new Car({
-      model,
-      brand,
-      year,
-      pricePerDay,
-      imageUrl,
-      agency: req.user._id
-    });
-    await car.save();
-    res.status(201).json(car);
-  } catch (error) {
-    res.status(500).json({error: error.message});
-  }
+// Create a new car
+router.post('/', (req, res, next) => {
+  console.log('Incoming add car request');
+  next();
+}, authMiddleware(['agency']), isAgency, upload.single('image'), async (req, res) => {
+    try {
+        const { model, brand, year, pricePerDay } = req.body;
+        const imageUrl = req.file ? req.file.path : null;
+
+        const newCar = new Car({
+            model,
+            brand,
+            year,
+            pricePerDay,
+            imageUrl,
+            agency: req.user.id // use id from JWT, not _id
+        });
+
+        await newCar.save();
+        res.status(201).json(newCar);
+    } catch (error) {
+        console.error('Error creating car:', JSON.stringify(error, null, 2));
+        res.status(500).json({
+            message: 'Error creating car',
+            error: typeof error === 'object' ? JSON.stringify(error, null, 2) : error
+        });
+    }
 });
 
 // get cars by agency
-// only agency can get their cars
-// this is used to show the cars in the agency dashboard
-router.get('/agency/:agencyId', authMiddleware, isAgency, async (req, res) => {
-  try {
-    const cars = await Car.find({agency: req.params.agencyId});
-    res.status(200).json(cars);
-  } catch (error) {
-    res.status(500).json({error: error.message});
-  }
+router.get('/agency/:agencyId', authMiddleware(['agency']), isAgency, async (req, res) => {
+    try {
+        if (!req.params.agencyId || req.params.agencyId === 'undefined') {
+            return res.status(400).json({ message: 'Missing or invalid agencyId' });
+        }
+        const cars = await Car.find({ agency: req.params.agencyId });
+        res.status(200).json(cars);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching cars', error: error.message });
+        console.error('Error fetching cars:', error.stack || error.message);
+    }
 });
 
 // delete a car
-router.delete('/:id', authMiddleware, isAgency, async (req, res) => {
-  try {
-    const car = await Car.findOneAndDelete({ _id: req.params.id, agency: req.user._id });
-    if (!car) {
-      return res.status(404).json({ error: 'Car not found or not authorized' });
+router.delete('/:id', authMiddleware(['agency']), isAgency, async (req, res) => {
+    try {
+        const car = await Car.findByIdAndDelete(req.params.id);
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found' });
+        }
+        res.status(200).json({ message: 'Car deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting car', error: error.message });
+        console.error('Error deleting car:', error.stack || error.message);
     }
-    res.status(200).json({ message: 'Car deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
-// Updating car price
-router.patch('/:id/price', authMiddleware, isAgency, async (req, res) => {
-  try {
-    const { pricePerDay } = req.body;
-    const car = await Car.findOneAndUpdate(
-      { _id: req.params.id, agency: req.user._id },
-      { pricePerDay },
-      { new: true }
-    );
-    if (!car) {
-      return res.status(404).json({ error: 'Car not found or not authorized' });
+// update a car price
+router.patch('/:id/price', authMiddleware(['agency']), isAgency, async (req, res) => {
+    try {
+        const { pricePerDay } = req.body;
+        const car = await Car.findByIdAndUpdate(
+            req.params.id,
+            { pricePerDay },
+            { new: true }
+        );
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found' });
+        }
+        res.status(200).json(car);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating car price', error: error.message });
+        console.error('Error updating car price:', error.stack || error.message);
     }
-    res.status(200).json(car);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
-
 
 // get all cars
-// this is used to show the cars in the home page
 router.get('/', async (req, res) => {
-  try {
-    const cars = await Car.find().populate('agency', 'name');
-    res.status(200).json(cars);
-  } catch (error) {
-    res.status(500).json({error: error.message});
-  }
+    try {
+        const cars = await Car.find();
+        res.status(200).json(cars);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching cars', error: error.message });
+        console.error('Error fetching cars:', error.stack || error.message);
+    }
 });
 
 module.exports = router;
-

@@ -11,7 +11,7 @@ const addCar = async (req, res) => {
             year,
             pricePerDay,
             imageUrl,
-            agency: agencyId
+            agency: req.user._id
         });
 
         await newCar.save();
