@@ -29,10 +29,11 @@ app.use(express.json());
 
 // Import routes
 
+
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/cars', require('./routes/cars'));
 app.use('/api/reservations', require('./routes/reservation'));
-app.use('/api/admin', require('./routes/admin'));
 app.use('/uploads', express.static('uploads'));
 
 
@@ -41,13 +42,13 @@ app.get('/', (req, res) => {
 });
 
 // Global error handler
-// app.use((err, req, res, next) => {
-//   console.error('GLOBAL ERROR:', JSON.stringify(err, null, 2));
-//   res.status(500).json({
-//     message: 'Internal server error',
-//     error: typeof err === 'object' ? JSON.stringify(err, null, 2) : err
-//   });
-// });
+app.use((err, req, res, next) => {
+  console.error('GLOBAL ERROR:', JSON.stringify(err, null, 2));
+  res.status(500).json({
+    message: 'Internal server error',
+    error: typeof err === 'object' ? JSON.stringify(err, null, 2) : err
+  });
+});
 
 
 const PORT = process.env.PORT || 5000;
