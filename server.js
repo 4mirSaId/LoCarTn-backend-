@@ -35,6 +35,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/cars', require('./routes/cars'));
 app.use('/api/reservations', require('./routes/reservation'));
 app.use('/uploads', express.static('uploads'));
+app.use('/api/admin', require('./routes/admin'));
 
 
 app.get('/', (req, res) => {
