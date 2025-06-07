@@ -20,8 +20,16 @@ const carSchema = new Schema({
     type: Number,
     required: true
   },
+  caution: {
+    type: Number,
+    required: true
+  },
   imageUrl: {
     type: String,
+  },
+  location: {
+    type: String,
+    required: true
   },
   agency: {
     type: Schema.Types.ObjectId,

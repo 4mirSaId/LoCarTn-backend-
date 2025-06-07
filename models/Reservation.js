@@ -11,6 +11,15 @@ const reservationSchema = new mongoose.Schema({
     ref: 'Client',
     required: true,
   },
+  agencyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Agency',
+    required: true,
+  },
+  agencyName: {
+    type: String,
+    required: true,
+  },
   period: {
     from: { type: Date, required: true },
     to: { type: Date, required: true },

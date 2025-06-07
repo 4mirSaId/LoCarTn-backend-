@@ -10,7 +10,7 @@ router.post('/', (req, res, next) => {
   next();
 }, authMiddleware(['agency']), isAgency, upload.single('image'), async (req, res) => {
     try {
-        const { model, brand, year, pricePerDay } = req.body;
+        const { model, brand, year, pricePerDay, caution, location } = req.body;
         const imageUrl = req.file ? req.file.path : null;
 
         const newCar = new Car({
@@ -18,6 +18,8 @@ router.post('/', (req, res, next) => {
             brand,
             year,
             pricePerDay,
+            caution,
+            location,
             imageUrl,
             agency: req.user.id // use id from JWT, not _id
         });

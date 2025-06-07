@@ -14,24 +14,40 @@ exports.createReservation = async (req, res) => {
     if (!carId || !from || !to || !phone) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    const car = await Car.findById(carId);
+    const car = await Car.findById(carId).populate('agency');
     if (!car) {
       return res.status(404).json({ message: 'Car not found' });
     }
     const fromDate = new Date(from);
     const toDate = new Date(to);
-    if (fromDate > toDate) {
-      return res.status(400).json({ message: 'Invalid period interval' });
+
+    // Check for overlapping reservations for this car
+    const overlapping = await Reservation.findOne({
+      carId: req.body.carId,
+      $or: [
+        {
+          from: { $lte: toDate },
+          to: { $gte: fromDate }
+        }
+      ],
+      status: { $ne: 'cancelled' } // Optional: ignore cancelled reservations
+    });
+
+    if (overlapping) {
+      return res.status(400).json({ message: 'Not available for these days!' });
     }
+
     const days = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
-    const cost = car.pricePerDay * days;
+    const cost = (car.pricePerDay * days) + car.caution;
     const reservation = new Reservation({
       carId,
       clientId,
+      agencyId: car.agency._id,
+      agencyName: car.agency.name, // Add agency name to reservation
       period: { from: fromDate, to: toDate },
       cost,
       status: 'pending',
-      phone,
+      phone
     });
     await reservation.save();
     res.status(201).json(reservation);
@@ -44,8 +60,17 @@ exports.createReservation = async (req, res) => {
 exports.getClientReservations = async (req, res) => {
   try {
     const clientId = req.user.id;
-    const reservations = await Reservation.find({ clientId }).populate('carId');
-    res.json(reservations);
+    const reservations = await Reservation.find({ clientId })
+      .populate({
+        path: 'carId',
+        populate: { path: 'agency', select: 'name' }
+      });
+    // Attach agency name to each reservation in the response
+    const result = reservations.map(r => ({
+      ...r.toObject(),
+      agencyName: r.carId?.agency?.name || r.agencyName || null
+    }));
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reservations', error: error.message });
   }
