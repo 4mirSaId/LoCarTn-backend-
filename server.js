@@ -7,8 +7,12 @@ dotenv.config();
 connectDB();
 const app = express();
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://locartn.netlify.app'
+]
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
